@@ -22,10 +22,10 @@ def normalize_data(data):
 
 
 def create_sequences(data_scaled, sequence_length):
-    X = []
+    x = []
     for i in range(sequence_length, len(data_scaled)):
-        X.append(data_scaled[i - sequence_length : i])
-    return np.array(X)
+        x.append(data_scaled[i - sequence_length : i])
+    return np.array(x)
 
 
 def plot_results(original, predicted):
@@ -60,20 +60,20 @@ def main():
 
     # 3. Create sequences
     sequence_length = 10
-    X = create_sequences(data_scaled, sequence_length)
+    x_output = create_sequences(data_scaled, sequence_length)
 
     # 4. Train-test split
-    X_train, X_test = train_test_split(X, test_size=0.2, shuffle=False)
+    x_train, x_test = train_test_split(x_output, test_size=0.2, shuffle=False)
 
     # 5. Load pre-trained model
     autoencoder = load_model("autoencoder_model.keras")
 
     # 6. Make predictions
-    predictions = autoencoder.predict(X_test)
+    predictions = autoencoder.predict(x_test)
 
     # 7. Invert scaling
     predicted_values = scaler.inverse_transform(predictions.reshape(-1, 1))
-    original_test_values = scaler.inverse_transform(X_test.reshape(-1, 1))
+    original_test_values = scaler.inverse_transform(x_test.reshape(-1, 1))
 
     # 8. Plot results
     plot_results(original_test_values, predicted_values)
