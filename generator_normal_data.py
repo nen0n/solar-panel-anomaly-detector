@@ -1,154 +1,82 @@
-# Import necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime, timedelta
 
-
-# Function to simulate solar panel output with added noise
-def solar_panel_output_with_noise(
-    time,
-    start_month=1,
+def simulate_and_save_solar_output(
+    start_date="2025-03-01",
     num_days=20,
     max_output=1,
     period=24,
     phase_shift=0,
     noise_level=0.05,
+    filename="solar_output.csv",
+    plot_day=True,
+    plot_full=True
 ):
-    # Dictionary of average daylight hours for each month (simplified)
+    # Dictionary of average daylight hours (extendable)
     daylight_hours = {
-        1: 9,
-        2: 10,
-        3: 12,
-        4: 14,
-        5: 15,
-        6: 15,
-        7: 14,
-        8: 13,
-        9: 14,
-        10: 13,
-        11: 12,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 13,
-        16: 11,
-        17: 9,
-        18: 10,
-        19: 11,
-        20: 13,
+        1: 9, 2: 10, 3: 12, 4: 14, 5: 15, 6: 15, 7: 14, 8: 13, 9: 14, 10: 13,
+        11: 12, 12: 12, 13: 13, 14: 14, 15: 13, 16: 11, 17: 9, 18: 10, 19: 11, 20: 13,
     }
 
-    # Create a time array for the simulation duration
+    # Time array in hours
     total_time = np.linspace(0, num_days * 24, num_days * 1000)
     output = np.zeros_like(total_time)
 
-    # Simulate output based on sinusoidal function and daylight scaling
+    # Simulate solar output
     for i, t in enumerate(total_time):
-        month = start_month + (int(t // 24) % num_days)
+        month = 1 + (int(t // 24) % num_days)
         scale_factor = daylight_hours.get(month, 12) / 12
-        output[i] = (
-            scale_factor * max_output * np.sin((2 * np.pi * (t - phase_shift)) / period)
-        )
+        output[i] = scale_factor * max_output * np.sin((2 * np.pi * (t - phase_shift)) / period)
 
-    # Add Gaussian noise to simulate variability
-    noise = np.random.normal(0, noise_level, len(output))
-    output += noise
-
-    # Ensure no negative output (as solar panels can't go below zero)
+    # Add noise and clamp negatives
+    output += np.random.normal(0, noise_level, len(output))
     output = np.maximum(output, 0)
 
-    return total_time, output
-
-
-# Function to generate and save solar output data to CSV
-def generate_and_save_solar_output(
-    start_date="2025-03-01",
-    num_months=20,
-    max_output=1,
-    period=24,
-    phase_shift=0,
-    noise_level=0.05,
-    filename="solar_output.csv",
-):
-    # Dictionary of average daylight hours for each month (simplified)
-    daylight_hours = {
-        1: 9,
-        2: 10,
-        3: 12,
-        4: 14,
-        5: 15,
-        6: 15,
-        7: 14,
-        8: 13,
-        9: 14,
-        10: 13,
-        11: 12,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 13,
-        16: 11,
-        17: 9,
-        18: 10,
-        19: 11,
-        20: 13,
-    }
-
-    # Create a time array (in hours) for simulation
-    total_time = np.linspace(0, num_months * 24, num_months * 1000)
-    output = np.zeros_like(total_time)
-
-    # Simulate output with scaled sine wave and daylight variation
-    for i, t in enumerate(total_time):
-        month = 1 + (int(t // 24) % num_months)
-        scale_factor = daylight_hours.get(month, 12) / 12
-        output[i] = (
-            scale_factor * max_output * np.sin((2 * np.pi * (t - phase_shift)) / period)
-        )
-
-    # Add Gaussian noise
-    noise = np.random.normal(0, noise_level, len(output))
-    output += noise
-
-    # Prevent negative values
-    output = np.maximum(output, 0)
-
-    # Create datetime timestamps based on start date
+    # Generate timestamps
     base_date = datetime.strptime(start_date, "%Y-%m-%d")
     timestamps = [base_date + timedelta(hours=t) for t in total_time]
 
-    # Assume output is in kWh (adjust scaling if needed)
-    kWh_output = output * 1
-
-    # Create DataFrame and save to CSV
-    df = pd.DataFrame({"Date": timestamps, "kWh": kWh_output})
+    # Save data
+    df = pd.DataFrame({"Date": timestamps, "kWh": output})
     df.to_csv(filename, index=False)
     print(f"Data saved to {filename}")
 
+    # Plot one day (optional)
+    if plot_day:
+        day_time = np.linspace(0, 24, 1000)
+        scale_factor = daylight_hours.get(1, 12) / 12
+        day_output = scale_factor * max_output * np.sin((2 * np.pi * (day_time - phase_shift)) / period)
+        day_output += np.random.normal(0, noise_level, len(day_output))
+        day_output = np.maximum(day_output, 0)
 
-# Main entry point of the script
-def main():
-    # Generate and export simulated solar data to a file
-    generate_and_save_solar_output(
-        start_date="2025-03-01",
-        num_months=20,
-        filename="C:/Users/gzdes/PycharmProjects/Diplome/data/solar_output.csv",
-    )
+        plt.figure(figsize=(10, 4))
+        plt.plot(day_time, day_output, label="One Day Output", color="orange")
+        plt.title("Simulated Solar Output (1 Day with Noise)")
+        plt.xlabel("Time (hours)")
+        plt.ylabel("Output (relative to max)")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-    # Generate one day of noisy solar output for visualization
-    time, output = solar_panel_output_with_noise(time=np.linspace(0, 24, 1000))
+    # Plot full dataset (optional)
+    if plot_full:
+        plt.figure(figsize=(12, 5))
+        plt.plot(timestamps, output, label="Full Simulation Output", color="blue", linewidth=0.8)
+        plt.title(f"Simulated Solar Output Over {num_days} Days")
+        plt.xlabel("Date")
+        plt.ylabel("kWh Output")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
-    # Plot the output
-    plt.plot(time, output, label="Solar Panel Output with Noise")
-    plt.title("Simulated Solar Panel Output with Noise Over 20 Days")
-    plt.xlabel("Time (hours)")
-    plt.ylabel("Output (relative to max output)")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
-
-
-# Only run the main function if the script is executed directly
+# Run if executed directly
 if __name__ == "__main__":
-    main()
+    simulate_and_save_solar_output(
+        start_date="2025-03-01",
+        num_days=20,
+        filename="data/solar_output.csv"
+    )
