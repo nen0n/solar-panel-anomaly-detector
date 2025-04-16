@@ -153,8 +153,11 @@ You can modify the following to tune the system:
 
 - **joblib**
 
-- **pytest**
+- **unittest**
+
 - **pylint**
+
+- **black**
 
 Install all dependencies with:
 
