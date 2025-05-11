@@ -92,7 +92,6 @@ def process_file(file, model, threshold, idx):
         f"Anomalies detected in File {idx + 1} at indices: {np.where(local_anomalies)[0]}"
     )
 
-
 def main():
     model_path = "autoencoder_model.keras"
 
